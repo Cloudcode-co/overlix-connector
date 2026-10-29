@@ -268,11 +268,11 @@ func (s *session) onRealtime(ev realtime.Event, tickets chan [2]string) error {
 	switch ev.Name {
 	case "game:minecraft:world:join_review":
 		var r struct {
-			WorldID       string `json:"world_id"`
-			UserID        int64  `json:"requester_user_id"`
-			Username      string `json:"requester_username"`
-			SocketID      string `json:"requester_socket_id"`
-			NeedsApproval bool   `json:"needs_approval"`
+			WorldID       string          `json:"world_id"`
+			UserID        json.RawMessage `json:"requester_user_id"` // a string; sent back as is
+			Username      string          `json:"requester_username"`
+			SocketID      string          `json:"requester_socket_id"`
+			NeedsApproval bool            `json:"needs_approval"`
 		}
 		_ = json.Unmarshal(ev.Data, &r)
 		if r.WorldID != s.world {
