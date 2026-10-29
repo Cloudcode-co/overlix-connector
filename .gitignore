@@ -1,0 +1,7 @@
+# Sign-in files are secrets
+token.json
+*.token.json
+# Binaries
+/overlix-connector
+*.exe
+/dist/
