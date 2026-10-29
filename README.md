@@ -30,6 +30,9 @@ overlix-connector probe          # check BDS is reachable (no Overlix traffic)
 overlix-connector run            # publish and relay players
 ```
 
+The account needs **relay access**, granted by an Overlix admin on the admin hub (Users page).
+Without it the world is refused and the connector stops.
+
 The sign-in is saved to `<config dir>/overlix-connector/token.json` (mode 0600). Override the
 path with `-token` or `OVERLIX_CONNECTOR_TOKEN`. Treat the file like a password.
 

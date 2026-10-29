@@ -55,6 +55,9 @@ func Run(ctx context.Context, cfg Config) error {
 		if ctx.Err() != nil {
 			return nil
 		}
+		if errors.Is(err, ErrNoRelayAccess) {
+			return err
+		}
 		log.Printf("[host] stopped: %v; retrying in %s", err, backoff)
 		select {
 		case <-ctx.Done():
@@ -131,6 +134,8 @@ func openPayload(cfg Config, c *bds.Card, nethernet bool) map[string]any {
 		"version_name":  c.VersionName,
 		"friends_only":  cfg.FriendsOnly,
 		"join_approval": true,
+		// A dedicated server: needs relay access on the account; the world list tags it.
+		"host_kind": "server",
 	}
 	if cfg.Password != "" {
 		p["password"] = cfg.Password
@@ -177,7 +182,7 @@ func waitFor(ctx context.Context, rt *realtime.Client, name string, d time.Durat
 				return ev, nil
 			}
 			if ev.Name == "error" {
-				return realtime.Event{}, fmt.Errorf("backend error: %s", string(ev.Data))
+				return realtime.Event{}, backendError(ev.Data)
 			}
 		}
 	}
@@ -423,3 +428,14 @@ func (s *rakServer) fromGuest(peer uint64, data []byte) { s.relay.FromGuest(peer
 func (s *rakServer) signal(uint64, []byte)              {}
 func (s *rakServer) drop(peer uint64)                   { s.relay.Drop(peer) }
 func (s *rakServer) close()                             { s.relay.Close() }
+
+// ErrNoRelayAccess: the account may not publish servers (relay access is granted by an
+// Overlix admin). Retrying cannot help, so Run gives up.
+var ErrNoRelayAccess = errors.New("this Overlix account has no relay access: ask an Overlix admin to grant it")
+
+func backendError(data []byte) error {
+	if strings.Contains(string(data), "relay_access_required") {
+		return ErrNoRelayAccess
+	}
+	return fmt.Errorf("backend error: %s", string(data))
+}
